@@ -1,5 +1,5 @@
 import os
-import sys
+import sys, random 
 
 import pygame
 
@@ -38,6 +38,13 @@ row4_top = row4_y - 8 * slope
 row3_top = row3_y - 8 * slope
 row2_top = row2_y - 8 * slope
 row1_top = start_y - 5 * slope
+
+barrel_img = pygame.transform.scale(pygame.image.load('assets/images/barrels/barrel.png'), (section_width * 1.5, section_height * 2))  
+
+barrel_spawn_time = 360
+barrel_count = barrel_spawn_time / 2 
+barrel_time = 360 
+fireball_trigger = False 
 
 active_level = 0
 levels = [{'bridges': [(1, start_y, 15), (16, start_y - slope, 3),
@@ -79,6 +86,44 @@ levels = [{'bridges': [(1, start_y, 15), (16, start_y - slope, 3),
            'target': (13, row6_y - 4 * section_height, 3)}]
 
 
+class Barrel(pygame.sprite.Sprite):
+  def __init__(self, x, y):
+    pygame.sprite.Sprite.__init__(self)
+    self.image = pygame.Surface((50,50)) 
+    self.rect = self.image.get_rect() 
+    self.rect.center = (x, y) 
+    self.y_change = 0
+    self.x_change = 1 
+    self.pos = 0
+    self.count = 0
+    self.oil_collision = False 
+    self.falling = False
+    self.check_lad = False 
+    self.bottom = self.rect 
+  
+  
+  def update(self, fire_trig):
+    if self.y_change < 8 and not self.falling:
+      self.y_change += 2 
+    for i in range(len(plats)):
+      if self.bottom.colliderect(plats[i]):
+        self.y_change = 0
+        self.falling = False 
+    if self.rect.colliderect(oil_drum):
+      if not self.oil_collision:
+        self.oil_collision = True 
+        if random.randint(0, 4) == 4:
+          fire_trig = True
+    return fire_trig 
+    
+    
+  def check_fall(self):
+    pass
+  
+  def draw(self):
+    screen.blit(pygame.transform.rotate(barrel_img, 90*self.pos), self.rect.topleft)
+  
+
 class Bridge:
     def __init__(self, x, y, length):
         self.x = x * section_width
@@ -117,7 +162,7 @@ class Ladder:
     for i in range(self.length):
       top = self.y + lad_height * section_height * i 
       bottom = top + lad_height * section_height
-      center = (bottom - top) / 2 + top 
+      center = (lad_height/2) * section_height + top 
       
       left = self.x 
       right = left + section_width 
@@ -136,25 +181,45 @@ def draw_screen():
 
     ladders = levels[active_level]['ladders']
     bridges = levels[active_level]['bridges']
-
-    for bridge in bridges:
-      bridge_objs.append(Bridge(*bridge))
-      platforms.append(bridge_objs[-1].top)
+    
+    
     for ladder in  ladders:
       ladders_objs.append(Ladder(*ladder))
       if ladder[2] >= 3:
         climbers.append(ladders_objs[-1].body) 
+    for bridge in bridges:
+      bridge_objs.append(Bridge(*bridge))
+      platforms.append(bridge_objs[-1].top)
+    
     
     
     return platforms, climbers 
 
 
+
+barrels = pygame.sprite.Group()  
+oil_drum = pygame.rect.Rect((1,1), (1,1)) 
+
 def main():
+    global barrel_count, barrel_time
     run = True
     while run:
         screen.fill('black')
         timer.tick(fps)
-
+        
+        if barrel_count < barrel_spawn_time:
+          barrel_count += 1
+        else:
+          barrel_count = random.randint(0, 120) 
+          barrel_time = barrel_count - barrel_spawn_time 
+          barrel = Barrel(270, 270) 
+          barrels.add(barrel) 
+          
+        for barrel in barrels:
+          barrel.draw() 
+          barrel.check_fall() 
+        barrel.update() 
+          
         plats, lads = draw_screen()
 
         for event in pygame.event.get():
