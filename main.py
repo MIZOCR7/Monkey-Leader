@@ -1,4 +1,3 @@
-# DONKEY KONG REBUILD IN PYTHON WITH THE PYGAME MODULE! (Est.720 Lines of Code)
 import os
 import sys
 
