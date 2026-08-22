@@ -14,8 +14,8 @@ window_width, window_height = screen_width - 800, screen_height - 150
 timer = pygame.time.Clock()
 fps = 60
 
-# font = pygame.font.Font('freesansbold.ttf', 50)
-# font2 = pygame.font.Font('freesansbold.ttf', 30)
+font = pygame.font.Font('freesansbold.ttf', 50)
+font2 = pygame.font.Font('freesansbold.ttf', 30) 
 
 pygame.display.set_caption("Monkey Defeater")
 pygame.display.set_icon(icon)
@@ -42,10 +42,22 @@ row1_top = start_y - 5 * slope
 
 barrel_img = pygame.transform.scale(pygame.image.load('assets/images/barrels/barrel.png'), (section_width * 1.5, section_height * 2))  
 
+flames_img = pygame.transform.scale(pygame.image.load('assets/images/fire.png'),(section_width * 2, section_height))
+barrel_side = pygame.transform.scale(pygame.image.load('assets/images/barrels/barrel2.png'), (section_width * 2, section_height * 2.5))
+
+dk1 = pygame.transform.scale(pygame.image.load('assets/images/dk/dk1.png'), (section_width * 5, section_height * 5))
+
+dk2 = pygame.transform.scale(pygame.image.load('assets/images/dk/dk2.png'), (section_width * 5, section_height * 5))
+
+dk3 = pygame.transform.scale(pygame.image.load('assets/images/dk/dk3.png'), (section_width * 5, section_height * 5))
+
+
 barrel_spawn_time = 360
 barrel_count = barrel_spawn_time / 2 
 barrel_time = 360 
 fireball_trigger = False 
+
+counter = 0
 
 active_level = 0
 levels = [{'bridges': [(1, start_y, 15), (16, start_y - slope, 3),
@@ -215,6 +227,55 @@ class Ladder:
     return body 
 
 
+def draw_extras():
+    oil = draw_oil()
+    return oil
+
+def draw_oil():
+    x_coord, y_coord = 4 * section_width, window_height - 4.5 * section_height 
+    oil = pygame.draw.rect(screen, 'blue', [x_coord, y_coord, 2*section_width, 2.5*section_height]) 
+    pygame.draw.rect(screen, 'blue', [x_coord - 0.1 *section_width, y_coord, 2.2*section_width, .2*section_height])
+    pygame.draw.rect(screen, 'blue', [x_coord - 0.1 *section_width, y_coord + 2.3 * section_height, 2.2 * section_width, .2*section_height]) 
+    pygame.draw.rect(screen, 'light blue', [x_coord + 0.1 * section_width, y_coord + .2*section_height, .2*section_width, .2*section_height])
+    
+    pygame.draw.rect(screen, 'light blue', [x_coord, y_coord + 0.5 * section_height, 2 * section_width, .2 * section_height])
+    pygame.draw.rect(screen, 'light blue', [x_coord, y_coord + 1.7 * section_height, 2 * section_width, .2 * section_height]) 
+    
+    screen.blit(font2.render('OIL', True, 'light blue'), (x_coord + .4 * section_width - 10, y_coord + 0.7 * section_height - 2))  
+    
+    for i in range(4):
+        pygame.draw.circle(screen, 'red', (x_coord + 0.5*section_width + i*0.4*section_width, y_coord + 2.1 * section_height), 3) 
+    
+    if counter < 15 or 30 < counter < 45:
+        screen.blit(flames_img, (x_coord, y_coord - section_height)) 
+    else:
+        screen.blit(pygame.transform.flip(flames_img, True, False), (x_coord, y_coord - section_height)) 
+    
+    return oil 
+
+def draw_barrels():
+    screen.blit(pygame.transform.rotate(barrel_side, 90), (section_width * 1.2, 5.4 * section_height)) 
+    screen.blit(pygame.transform.rotate(barrel_side, 90), (section_width * 2.5, 5.4 * section_height)) 
+    screen.blit(pygame.transform.rotate(barrel_side, 90), (section_width * 2.5, 7.7 * section_height)) 
+    screen.blit(pygame.transform.rotate(barrel_side, 90), (section_width * 1.2, 7.7 * section_height)) 
+    
+    
+    
+def draw_kong():
+    phase_time = barrel_time // 4
+    if barrel_spawn_time - barrel_count > 3 * phase_time:
+        monkey_img = dk2
+    elif barrel_spawn_time - barrel_count > 2 * phase_time:
+        monkey_img = dk1
+    elif barrel_spawn_time - barrel_count > phase_time:
+        monkey_img = dk3
+    else:
+        monkey_img = pygame.transform.flip(dk1, True, False) 
+        screen.blit(barrel_img, (270, 270)) 
+    
+    screen.blit(monkey_img, (3.5 * section_width, row6_y - 5.5 * section_height))
+    
+
 def draw_screen():
     platforms = []
     climbers = []
@@ -240,22 +301,27 @@ def draw_screen():
 
 
 barrels = pygame.sprite.Group()  
-oil_drum = pygame.rect.Rect((1,1), (1,1)) 
 
 def main():
-    global barrel_count, barrel_time, plats, lads, fireball_trigger
+    global barrel_count, barrel_time, plats, lads, fireball_trigger, oil_drum, counter
     while True:
         screen.fill('black')
         timer.tick(fps)
+        if counter < 60:
+            counter += 1
+        else:
+            counter = 0 
         
         plats, lads = draw_screen() 
-        
+        oil_drum = draw_extras() 
+        draw_barrels()
+        draw_kong()
         if barrel_count < barrel_spawn_time:
           barrel_count += 1
         else:
           barrel_count = random.randint(0, 120) 
           barrel_time = barrel_spawn_time - barrel_count
-          barrel = Barrel(int(5 * section_width), int(row6_top - section_height)) 
+          barrel = Barrel(random.randint(100,600), 270) 
           barrels.add(barrel) 
           
         
